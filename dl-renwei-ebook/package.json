@@ -1,0 +1,15 @@
+{
+  "name": "get-renwei-ebook",
+  "version": "1.0.0",
+  "description": "CLI downloader for Renwei ebook PDFs, used by the repository GUI workflow.",
+  "private": true,
+  "license": "GPL-3.0-only",
+  "type": "module",
+  "scripts": {
+    "grab:pdf": "node grab-pdf-cli.mjs"
+  },
+  "dependencies": {
+    "pdfjs-dist": "^5.5.207",
+    "playwright-core": "^1.58.2"
+  }
+}
