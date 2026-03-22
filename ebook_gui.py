@@ -9,6 +9,7 @@ import subprocess
 import sys
 import threading
 import tkinter as tk
+import unicodedata
 from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
 
@@ -56,6 +57,12 @@ AUTHOR_LINE_MARKERS = (
     '审校',
     '作者',
 )
+
+try:
+    fitz.TOOLS.mupdf_display_errors(False)
+    fitz.TOOLS.mupdf_display_warnings(False)
+except Exception:
+    pass
 
 
 def open_path(path_str: str) -> None:
@@ -108,6 +115,21 @@ def normalize_inline_text(text: str) -> str:
     return compact.strip()
 
 
+def make_safe_preview(text: str, limit: int = 80) -> str:
+    preview_chars: list[str] = []
+    for ch in normalize_inline_text(text):
+        category = unicodedata.category(ch)
+        if category in {'Cc', 'Cf', 'Cs', 'Co', 'Cn'}:
+            preview_chars.append('�')
+        elif category in {'Mn', 'Mc', 'Me'}:
+            continue
+        else:
+            preview_chars.append(ch)
+        if len(preview_chars) >= limit:
+            break
+    return ''.join(preview_chars).strip()
+
+
 def looks_garbled_text(text: str) -> bool:
     normalized = normalize_inline_text(text)
     if not normalized:
@@ -117,14 +139,28 @@ def looks_garbled_text(text: str) -> bool:
     garbled = 0
     cjk_count = 0
     replacement_count = 0
+    suspicious_category_count = 0
+    control_count = 0
 
     for ch in normalized:
         if ch.isspace():
             continue
+        category = unicodedata.category(ch)
         if ch in {'�', '□'}:
             interesting += 1
             garbled += 1
             replacement_count += 1
+            continue
+        if category in {'Cc', 'Cf', 'Cs', 'Co', 'Cn'}:
+            interesting += 1
+            garbled += 1
+            suspicious_category_count += 1
+            control_count += 1
+            continue
+        if category in {'Mn', 'Mc', 'Me'}:
+            interesting += 1
+            garbled += 1
+            suspicious_category_count += 1
             continue
         if contains_cjk(ch):
             cjk_count += 1
@@ -137,6 +173,10 @@ def looks_garbled_text(text: str) -> bool:
                 garbled += 1
                 break
 
+    if control_count >= 4:
+        return True
+    if suspicious_category_count >= 8 and cjk_count <= max(12, suspicious_category_count):
+        return True
     if garbled >= 4 and cjk_count == 0:
         return True
     if interesting < 6:
@@ -190,8 +230,12 @@ def collect_page_samples(pdf_path: Path, password: str = '') -> tuple[list[int],
             if page_number > document.page_count:
                 continue
             checked_pages.append(page_number)
-            text = document.load_page(page_number - 1).get_text('text')
-            preview = normalize_inline_text(text)[:80]
+            try:
+                text = document.load_page(page_number - 1).get_text('text')
+            except Exception as exc:
+                garbled_pages.append(f'{page_number}(文字提取失败: {exc})')
+                continue
+            preview = make_safe_preview(text)
             if looks_garbled_text(text):
                 garbled_pages.append(f'{page_number}({preview or "无可提取文本"})')
     finally:
