@@ -26,7 +26,7 @@ DEFAULT_BROWSER_PATH = os.environ.get(
     r'C:\Users\ORR\AppData\Local\Google\Chrome\Application\chrome.exe',
 )
 TITLE_PAGE_NUMBER = 2
-SAMPLED_PAGE_NUMBERS = (1, 6, 20)
+SAMPLED_PAGE_NUMBERS = tuple(range(1, 21))
 GARBLED_RANGES = (
     (0x0370, 0x03FF),
     (0x0400, 0x04FF),
@@ -857,8 +857,8 @@ class RenweiGui:
             self.append_log(f'找不到待检查的 PDF: {source_path}')
             return
 
-        self.status_var.set('正在检查第1、6、20页文字层...')
-        self.append_log('开始抽样检查第1、6、20页文字层。')
+        self.status_var.set('正在检查第1-20页文字层...')
+        self.append_log('开始抽样检查第1-20页文字层。')
 
         try:
             checked_pages, garbled_pages = collect_page_samples(source_path, self.current_pdf_password)
