@@ -54,7 +54,7 @@ cd dl-renwei-ebook
 npm install
 ```
 
-如果你需要使用自动修复，请自行准备本地字体目录，并在 GUI 中指向该目录。仓库默认不包含字体资源，可以在`[font下载](https://github.com/zyh1102/fonts)`处下载。
+如果你需要使用自动修复，请自行准备本地字体目录，并在 GUI 中指向该目录。仓库默认不包含字体资源，可以在 [fonts](https://github.com/zyh1102/fonts) 处下载。
 
 ## 快速开始
 
